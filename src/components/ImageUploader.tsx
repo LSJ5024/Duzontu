@@ -8,35 +8,62 @@ export default function ImageUploader() {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<null | any>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryAttempt, setRetryAttempt] = useState(0);
 
   const handleProcess = async () => {
     if (!file) return;
     setAnalyzing(true);
     setResult(null);
+    setError(null);
+    setRetryAttempt(0);
 
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
-      formData.append('style', style);
+    const maxRetries = 3;
+    
+    const fetchWithRetry = async (attempt: number): Promise<void> => {
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('style', style);
 
-      const res = await fetch('/api/rebalance', {
-        method: 'POST',
-        body: formData
-      });
-      
-      const data = await res.json();
-      
-      if (!res.ok) {
-        alert(data.error || '분석 중 오류가 발생했습니다.');
-      } else {
-        setResult(data);
+        const res = await fetch('/api/rebalance', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+          // 503 Error (Service Unavailable) -> Backoff Retry
+          if (res.status === 503 && attempt < maxRetries) {
+            setRetryAttempt(attempt + 1);
+            const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return fetchWithRetry(attempt + 1);
+          }
+          
+          if (res.status === 503) {
+            setError("현재 AI 분석 요청이 많아 잠시 지연되고 있습니다. 1분 후 다시 시도해 주세요.");
+          } else {
+            setError(data.error || '분석 중 오류가 발생했습니다.');
+          }
+        } else {
+          setResult(data);
+        }
+      } catch (err) {
+        if (attempt < maxRetries) {
+          setRetryAttempt(attempt + 1);
+          const delay = Math.pow(2, attempt) * 1000;
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchWithRetry(attempt + 1);
+        }
+        console.error(err);
+        setError('네트워크 또는 서버 통신 오류가 발생했습니다.');
       }
-    } catch (error) {
-      console.error(error);
-      alert('네트워크 또는 서버 통신 오류가 발생했습니다.');
-    } finally {
-      setAnalyzing(false);
-    }
+    };
+
+    await fetchWithRetry(0);
+    setAnalyzing(false);
   };
 
   return (
@@ -115,10 +142,26 @@ export default function ImageUploader() {
         <div className="bg-[#F8FAFC] rounded-3xl p-8 border border-gray-100 h-full min-h-[500px] flex flex-col relative overflow-hidden">
           <h3 className="text-xl font-bold text-gray-900 mb-6">AI 분석 결과 레포트</h3>
           
-          {!result && !analyzing && (
+          {!result && !analyzing && !error && (
             <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-400 pb-10">
               <span className="text-7xl mb-6 opacity-30 blur-[1px]">✨</span>
               <p className="font-semibold text-lg">스크린샷을 업로드하시면<br/>AI 맞춤 조언이 이곳에 생성됩니다.</p>
+            </div>
+          )}
+
+          {error && !analyzing && (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 animate-in fade-in duration-500">
+              <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center text-4xl mb-6">⚠️</div>
+              <h4 className="text-lg font-bold text-gray-900 mb-2">분석을 완료하지 못했습니다</h4>
+              <p className="text-gray-500 font-medium mb-8 leading-relaxed">
+                {error}
+              </p>
+              <button 
+                onClick={handleProcess}
+                className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg flex items-center gap-2"
+              >
+                <span>🔄 재시도하기</span>
+              </button>
             </div>
           )}
 
@@ -126,8 +169,19 @@ export default function ImageUploader() {
             <div className="flex-1 flex flex-col items-center justify-center space-y-6 pb-10">
               <div className="relative">
                 <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+                {retryAttempt > 0 && (
+                  <div className="absolute -top-2 -right-2 bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-bounce">
+                    재시도 {retryAttempt}회차
+                  </div>
+                )}
               </div>
-              <p className="text-base font-bold text-indigo-700 animate-pulse">이미지 속 자산 현황을 OCR로 판독 중입니다...</p>
+              <p className="text-base font-bold text-indigo-700 animate-pulse text-center">
+                {retryAttempt > 0 ? (
+                  <>서버 응답 지연으로 재시도 중입니다...<br/><span className="text-sm font-medium text-indigo-400">({retryAttempt}/3)</span></>
+                ) : (
+                  "이미지 속 자산 현황을 OCR로 판독 중입니다..."
+                )}
+              </p>
             </div>
           )}
 
