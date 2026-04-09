@@ -4,9 +4,10 @@ import { EarningData } from '@/lib/mockData';
 interface EarningCallModalProps {
   data: EarningData;
   onClose: () => void;
+  onUpgradeClick?: () => void;
 }
 
-export default function EarningCallModal({ data, onClose }: EarningCallModalProps) {
+export default function EarningCallModal({ data, onClose, onUpgradeClick }: EarningCallModalProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -99,6 +100,17 @@ export default function EarningCallModal({ data, onClose }: EarningCallModalProp
               <h4 className="text-xl font-black text-gray-900 dark:text-white mb-3 tracking-tight">🎙️ 경영진 주요 답변</h4>
               <p className="text-gray-600 dark:text-gray-400 leading-[1.65] text-[16px] font-medium tracking-tight break-keep">{data.detailed_summary.management_qa}</p>
             </section>
+          </div>
+
+          {/* PRO 업그레이드 CTA (심플 링크 버전) */}
+          <div className="pt-6 pb-4 border-t border-gray-100 dark:border-white/5 text-center">
+            <button 
+              onClick={onUpgradeClick}
+              className="group inline-flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
+            >
+              <span className="text-[15px] font-bold tracking-tight">더 디테일한 분석을 원한다면?</span>
+              <span className="text-[14px] font-black underline underline-offset-4 tracking-tight group-hover:no-underline">PRO 업그레이드 👑</span>
+            </button>
           </div>
           
         </div>

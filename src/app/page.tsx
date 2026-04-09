@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import EarningCard from '@/components/EarningCard';
 import EarningCallModal from '@/components/EarningCallModal';
+import ProUpgradeModal from '@/components/ProUpgradeModal';
 import { MOCK_DATA, EarningData } from '@/lib/mockData';
 
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string>('전체');
   const [selectedEarning, setSelectedEarning] = useState<EarningData | null>(null);
+  const [isProModalOpen, setIsProModalOpen] = useState(false);
 
   const categories = ['전체', '반도체', '테크/하드웨어', '소프트웨어', '데이터', '의료 AI', '금융', '에너지'];
 
@@ -69,7 +71,13 @@ export default function Home() {
         <EarningCallModal 
           data={selectedEarning} 
           onClose={() => setSelectedEarning(null)} 
+          onUpgradeClick={() => setIsProModalOpen(true)}
         />
+      )}
+
+      {/* PRO 업그레이드 모달 */}
+      {isProModalOpen && (
+        <ProUpgradeModal onClose={() => setIsProModalOpen(false)} />
       )}
     </div>
   );
