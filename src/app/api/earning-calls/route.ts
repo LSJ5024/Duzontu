@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
+import { withRetry, getErrorStatus } from '@/lib/ai-retry';
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,12 +33,14 @@ export async function POST(req: NextRequest) {
 ${rawTranscript}
 `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-      }
+    const response = await withRetry(async () => {
+      return await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+        }
+      });
     });
 
     const textResponse = response.text || "{}";
@@ -52,7 +55,12 @@ ${rawTranscript}
     return NextResponse.json(parsedJson);
 
   } catch (error: any) {
-    console.error('Earning Call API Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    const status = getErrorStatus(error);
+    console.error(`Earning Call API Error (${status}):`, error.message || error);
+    
+    return NextResponse.json(
+      { error: error.message || 'Internal Server Error', code: status }, 
+      { status }
+    );
   }
 }

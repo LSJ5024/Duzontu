@@ -11,6 +11,8 @@ export default function ImageUploader() {
   const [error, setError] = useState<string | null>(null);
   const [retryAttempt, setRetryAttempt] = useState(0);
 
+  const MAX_RETRIES = 3;
+
   const handleProcess = async () => {
     if (!file) return;
     setAnalyzing(true);
@@ -18,8 +20,6 @@ export default function ImageUploader() {
     setError(null);
     setRetryAttempt(0);
 
-    const maxRetries = 3;
-    
     const fetchWithRetry = async (attempt: number): Promise<void> => {
       try {
         const formData = new FormData();
@@ -34,8 +34,8 @@ export default function ImageUploader() {
         const data = await res.json();
         
         if (!res.ok) {
-          // 503 Error (Service Unavailable) -> Backoff Retry
-          if (res.status === 503 && attempt < maxRetries) {
+          // 503 (Service Unavailable) or 429 (Too Many Requests) -> Backoff Retry
+          if ((res.status === 503 || res.status === 429) && attempt < MAX_RETRIES) {
             setRetryAttempt(attempt + 1);
             const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
             await new Promise(resolve => setTimeout(resolve, delay));
@@ -43,7 +43,9 @@ export default function ImageUploader() {
           }
           
           if (res.status === 503) {
-            setError("현재 AI 분석 요청이 많아 잠시 지연되고 있습니다. 1분 후 다시 시도해 주세요.");
+            setError("현재 AI 분석 요청이 많아 잠시 지연되고 있습니다. 잠시 후 '재시도하기'를 눌러주세요.");
+          } else if (res.status === 429) {
+            setError("일시적인 할당량 초과입니다. 1분 정도 여유를 두고 다시 시도해 주세요.");
           } else {
             setError(data.error || '분석 중 오류가 발생했습니다.');
           }
@@ -51,7 +53,7 @@ export default function ImageUploader() {
           setResult(data);
         }
       } catch (err) {
-        if (attempt < maxRetries) {
+        if (attempt < MAX_RETRIES) {
           setRetryAttempt(attempt + 1);
           const delay = Math.pow(2, attempt) * 1000;
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -177,9 +179,9 @@ export default function ImageUploader() {
               </div>
               <p className="text-base font-bold text-indigo-700 animate-pulse text-center">
                 {retryAttempt > 0 ? (
-                  <>서버 응답 지연으로 재시도 중입니다...<br/><span className="text-sm font-medium text-indigo-400">({retryAttempt}/3)</span></>
+                  <>사용자가 많아 자동으로 다시 시도하고 있습니다...<br/><span className="text-sm font-medium text-indigo-400">({retryAttempt}/{MAX_RETRIES}회차)</span></>
                 ) : (
-                  "이미지 속 자산 현황을 OCR로 판독 중입니다..."
+                  "Vision AI가 포트폴리오 이미지를 판독 중입니다..."
                 )}
               </p>
             </div>
