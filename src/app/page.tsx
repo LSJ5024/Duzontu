@@ -28,7 +28,7 @@ export default function Home() {
             <span className="text-indigo-600 dark:text-indigo-400">핵심만 짚어드릴게요</span>
           </h1>
           <p className="text-lg md:text-xl text-gray-500 dark:text-gray-400 font-medium tracking-tight">
-            월스트리트 상위 100개 기업의 실적을 AI가 실시간으로 분석합니다.
+            미국 주식 상위 기업의 실적을 AI가 실시간으로 분석합니다.
           </p>
         </header>
 

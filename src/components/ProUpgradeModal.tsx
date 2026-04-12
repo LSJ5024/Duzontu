@@ -53,9 +53,9 @@ export default function ProUpgradeModal({ onClose }: ProUpgradeModalProps) {
               두쫀투 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">PRO</span>
             </h2>
             <div className="flex items-center justify-center gap-1.5 text-gray-400 dark:text-gray-500 font-bold">
-              <span className="text-lg line-through opacity-50">$19.99</span>
-              <span className="text-3xl text-gray-900 dark:text-white">$9.99</span>
-              <span className="text-sm">/ mo</span>
+              <span className="text-lg line-through opacity-50">19,900원</span>
+              <span className="text-3xl text-gray-900 dark:text-white">9,900원</span>
+              <span className="text-sm">/ 월</span>
             </div>
           </div>
 
@@ -69,7 +69,7 @@ export default function ProUpgradeModal({ onClose }: ProUpgradeModalProps) {
                 <h4 className="font-black text-[17px] text-gray-900 dark:text-white tracking-tight">기업 피드 전체 해제</h4>
                 <p className="text-[14px] font-semibold text-gray-500 dark:text-gray-400 tracking-tight leading-snug">
                   나스닥 및 다우존스 전 종목 리포트 제공<br/>
-                  <span className="text-indigo-500 dark:text-indigo-400 text-xs">(기존 상위 100개 제한 없음)</span>
+                  <span className="text-indigo-500 dark:text-indigo-400 text-xs">(미국 주식 상위 기업 제한 없음)</span>
                 </p>
               </div>
             </div>
